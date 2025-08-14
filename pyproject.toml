@@ -1,0 +1,14 @@
+[tool.poetry]
+package-mode=false
+
+[tool.poetry.dependencies]
+python="^3.13.5"
+fastapi = "^0.116.1"
+sqlalchemy = "^2.0.43"
+pydantic = {extras = ["setting"], version = "^2.11.7"}
+pydantic-settings = "^2.10.1"
+alembic = "^1.16.4"
+
+[tool.poetry.group.dev.dependencies]
+black = "^25.1.0"
+
