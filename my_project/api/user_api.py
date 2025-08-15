@@ -3,13 +3,14 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from api.crud import create_user, auth_user
+from api.crud import create_user, auth_user, get_current_token_payload
+from core.config import setting
 from core.model import db_helper, User
 from core.schema.token import TokenBase
 from core.schema.user import UserCreate, UserRead, UserBase, UserLogin
 from utils.validates import encode_jwt
 
-router = APIRouter(prefix="/user", tags=["User"])
+router = APIRouter(prefix="/auth", tags=["Auth"])
 
 
 @router.post(
@@ -44,3 +45,15 @@ async def login(user: UserLogin = Depends(auth_user)):
         access_token=token_user,
         token_type="Bearer",
     )
+
+
+@router.get("/me")
+async def user_me(
+    session: Annotated[AsyncSession, Depends(db_helper.session_getter)],
+    token: str = Depends(setting.auth_jwt.oauth2_scheme),
+):
+    user = await get_current_token_payload(session=session, token=token)
+    return {
+        "email": user.email,
+        "name": user.name,
+    }
