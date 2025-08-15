@@ -3,22 +3,37 @@ from sqlalchemy import select
 from fastapi import status, HTTPException
 
 from core.model import User
-from core.schema.user import UserCreate
+from core.schema.user import UserCreate, UserBase
+from utils.validates import hash_password
+
+
+async def get_user_by_email(
+    session: AsyncSession,
+    email_user: str,
+) -> User:
+    stmt = select(User).where(User.email == email_user)
+    result = await session.scalars(stmt)
+    user = result.first()
+    return user
 
 
 async def create_user(
     session: AsyncSession,
     data_user: UserCreate,
 ) -> User:
-    stmt = select(User).where(User.email == data_user.email)
-    result = await session.scalars(stmt)
-    user = result.first()
+    user = await get_user_by_email(session=session, email_user=str(data_user.email))
     if user:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail=f"Invalid there is already a user with this: {data_user.email}",
         )
-    user = User(**data_user.model_dump())
+    hash_bytes = hash_password(data_user.password)
+    hex_hash = hash_bytes.hex()
+    user = User(
+        email=data_user.email,
+        password_hash=hex_hash,
+        name=data_user.name,
+    )
     session.add(user)
     await session.commit()
     await session.refresh(user)
