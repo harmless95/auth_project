@@ -34,7 +34,12 @@ async def login(user: UserLogin = Depends(auth_user)):
         "name": user.name,
         "logged_in_at": now.isoformat(),
     }
-    token_user = encode_jwt(payload=jwt_payload)
+    token_user = encode_jwt(
+        payload=jwt_payload,
+        private_key=setting.auth_jwt.private_key_path.read_text(),
+        algorithm=setting.auth_jwt.algorithm,
+        expire_minutes=setting.auth_jwt.access_token_expire_minutes,
+    )
     return TokenBase(
         access_token=token_user,
         token_type="Bearer",
