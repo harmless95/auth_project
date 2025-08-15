@@ -1,10 +1,10 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from fastapi import status, HTTPException
+from fastapi import status, HTTPException, Depends
 
-from core.model import User
+from core.model import User, db_helper
 from core.schema.user import UserCreate, UserBase
-from utils.validates import hash_password
+from utils.validates import hash_password, validates_password
 
 
 async def get_user_by_email(
@@ -40,13 +40,22 @@ async def create_user(
     return user
 
 
-async def auth_user(session: AsyncSession, data_user: UserBase):
+async def auth_user(
+    data_user: UserBase,
+    session: AsyncSession = Depends(db_helper.session_getter),
+) -> User:
     error_ex = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="User not found or invalid credentials",
     )
-    user_email = await get_user_by_email(
-        session=session, email_user=str(data_user.email)
-    )
-    if not user_email:
+    user = await get_user_by_email(session=session, email_user=str(data_user.email))
+    if not user:
         raise error_ex
+
+    user_password = validates_password(
+        password=data_user.password,
+        password_hash=user.password_hash,
+    )
+    if not user_password:
+        raise error_ex
+    return user
