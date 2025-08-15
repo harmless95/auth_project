@@ -17,6 +17,6 @@ router = APIRouter(prefix="/user", tags=["User"])
 async def register_user(
     session: Annotated[AsyncSession, Depends(db_helper.session_getter)],
     data_user: UserCreate,
-) -> User:
+) -> UserRead:
     user = await create_user(session=session, data_user=data_user)
     return user
