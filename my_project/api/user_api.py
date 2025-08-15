@@ -10,7 +10,7 @@ router = APIRouter(prefix="/user", tags=["User"])
 
 
 @router.post(
-    "/",
+    "/register",
     response_model=UserRead,
     status_code=status.HTTP_201_CREATED,
 )
