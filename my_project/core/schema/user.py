@@ -30,3 +30,8 @@ class UserLogin(BaseModel):
     email: EmailStr
     password_hash: str
     name: str
+
+class UserReadLogin(BaseModel):
+    email: EmailStr
+    password: str
+    model_config = ConfigDict(from_attributes=True)
