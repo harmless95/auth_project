@@ -1,7 +1,10 @@
+from pathlib import Path
 from typing import Literal
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import BaseModel, PostgresDsn
+
+BASEDIR = Path(__file__).resolve().parent.parent
 
 # fmt: off
 LOG_DEFAULT_FORMAT = "[%(asctime)s.%(msecs)03d] %(module)10s:%(lineno)-3d %(levelname)-7s - %(message)s"
@@ -29,6 +32,13 @@ class LoggingConfig(BaseModel):
     log_format: str = LOG_DEFAULT_FORMAT
 
 
+class AuthJWT(BaseModel):
+    private_key_path: Path = BASEDIR / "certs" / "jwt-private.pem"
+    public_key_path: Path = BASEDIR / "certs" / "jwt-public.pem"
+    algorithm: str = "RS256"
+    access_token_expire_minutes: int = 15
+
+
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=(".env.template", ".env"),
@@ -39,6 +49,7 @@ class Settings(BaseSettings):
     db: ConfigDatabase
     run: RunConfig = RunConfig()
     logging: LoggingConfig = LoggingConfig()
+    auth_jwt: AuthJWT = AuthJWT()
 
 
 setting = Settings()
