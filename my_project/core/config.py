@@ -1,8 +1,9 @@
 from pathlib import Path
-from typing import Literal
+from typing import Literal, ClassVar
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import BaseModel, PostgresDsn
+from fastapi.security import OAuth2PasswordBearer
 
 BASEDIR = Path(__file__).resolve().parent.parent
 
@@ -37,6 +38,9 @@ class AuthJWT(BaseModel):
     public_key_path: Path = BASEDIR / "certs" / "jwt-public.pem"
     algorithm: str = "RS256"
     access_token_expire_minutes: int = 15
+    oauth2_scheme: ClassVar[OAuth2PasswordBearer] = OAuth2PasswordBearer(
+        tokenUrl="/auth/login/",
+    )
 
 
 class Settings(BaseSettings):
