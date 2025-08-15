@@ -38,3 +38,15 @@ async def create_user(
     await session.commit()
     await session.refresh(user)
     return user
+
+
+async def auth_user(session: AsyncSession, data_user: UserBase):
+    error_ex = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="User not found or invalid credentials",
+    )
+    user_email = await get_user_by_email(
+        session=session, email_user=str(data_user.email)
+    )
+    if not user_email:
+        raise error_ex
