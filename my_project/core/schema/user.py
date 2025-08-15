@@ -24,3 +24,9 @@ class UserUpdate(BaseModel):
     name: str | None = None
 
     model_config = ConfigDict(from_attributes=True)
+
+class UserLogin(BaseModel):
+    model_config = ConfigDict(strict=True)
+    email: EmailStr
+    password_hash: str
+    name: str
