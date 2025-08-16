@@ -1,12 +1,21 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from fastapi import status, HTTPException, Depends
-from jwt.exceptions import InvalidTokenError
+from fastapi.security import (
+    OAuth2PasswordBearer,
+    HTTPBearer,
+    HTTPAuthorizationCredentials,
+)
 
 from core.config import setting
 from core.model import User, db_helper
 from core.schema.user import UserCreate, UserBase, UserReadLogin
 from utils.validates import hash_password, validates_password, decode_jwt
+
+conn = HTTPBearer()
+oauth2_scheme = OAuth2PasswordBearer(
+    tokenUrl="/auth/login/",
+)
 
 
 async def get_user_by_email(
@@ -64,9 +73,11 @@ async def auth_user(
 
 
 async def get_current_token_payload(
-    session: AsyncSession,
-    token: str,
-) -> User:
+    credentials: HTTPAuthorizationCredentials = Depends(conn),
+    session: AsyncSession = Depends(db_helper.session_getter),
+) -> UserReadLogin:
+    token = credentials.credentials
+    print(token)
     error_ex = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Invalid token",
@@ -81,10 +92,16 @@ async def get_current_token_payload(
         user_email = payload.get("sub")
         if not user_email:
             raise error_ex
-    except InvalidTokenError:
+    except Exception:
         raise error_ex
 
     stmt = select(User).filter(User.email == user_email)
     result = await session.scalars(stmt)
     user = result.first()
-    return user
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User not found",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    return payload
