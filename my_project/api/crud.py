@@ -5,7 +5,9 @@ from fastapi.security import (
     OAuth2PasswordBearer,
     HTTPBearer,
     HTTPAuthorizationCredentials,
+    OAuth2PasswordRequestForm,
 )
+from jwt.exceptions import InvalidTokenError
 
 from core.config import setting
 from core.model import User, db_helper
@@ -52,14 +54,14 @@ async def create_user(
 
 
 async def auth_user(
-    data_user: UserReadLogin,
-    session: AsyncSession = Depends(db_helper.session_getter),
+    data_user: OAuth2PasswordRequestForm,
+    session: AsyncSession,
 ) -> User:
     error_ex = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="User not found or invalid credentials",
     )
-    user = await get_user_by_email(session=session, email_user=str(data_user.email))
+    user = await get_user_by_email(session=session, email_user=str(data_user.username))
     if not user:
         raise error_ex
 
@@ -75,9 +77,8 @@ async def auth_user(
 async def get_current_token_payload(
     credentials: HTTPAuthorizationCredentials = Depends(conn),
     session: AsyncSession = Depends(db_helper.session_getter),
-) -> UserReadLogin:
+):
     token = credentials.credentials
-    print(token)
     error_ex = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Invalid token",
@@ -92,7 +93,7 @@ async def get_current_token_payload(
         user_email = payload.get("sub")
         if not user_email:
             raise error_ex
-    except Exception:
+    except InvalidTokenError:
         raise error_ex
 
     stmt = select(User).filter(User.email == user_email)
@@ -105,3 +106,28 @@ async def get_current_token_payload(
             headers={"WWW-Authenticate": "Bearer"},
         )
     return payload
+
+
+async def get_user_token(
+    session: AsyncSession,
+    token: str,
+):
+    error_ex = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Invalid token",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    try:
+        payload = decode_jwt(
+            token=token,
+            public_key=setting.auth_jwt.public_key_path.read_text(),
+            algorithm=setting.auth_jwt.algorithm,
+        )
+        user_email = payload.get("sub")
+        if not user_email:
+            raise error_ex
+    except InvalidTokenError:
+        raise error_ex
+
+    user_result = await get_user_by_email(session=session, email_user=user_email)
+    return user_result

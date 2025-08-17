@@ -32,6 +32,6 @@ class UserLogin(BaseModel):
     name: str
 
 class UserReadLogin(BaseModel):
-    email: EmailStr
+    username: str
     password: str
     model_config = ConfigDict(from_attributes=True)
