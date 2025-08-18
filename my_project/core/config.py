@@ -38,6 +38,13 @@ class AuthJWT(BaseModel):
     public_key_path: Path = BASEDIR / "certs" / "jwt-public.pem"
     algorithm: str = "RS256"
     access_token_expire_minutes: int = 15
+    refresh_token_expire_days: int = 30
+
+    type_token: str = "Bearer"
+    type_payload: str = "type"
+    type_access: str = "access"
+    type_refresh: str = "refresh"
+
     oauth2_scheme: ClassVar[OAuth2PasswordBearer] = OAuth2PasswordBearer(
         tokenUrl="/auth/login/",
     )
