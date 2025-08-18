@@ -35,22 +35,11 @@ async def login(
     data_user: OAuth2PasswordRequestForm = Depends(),
 ):
     user = await auth_user(session=session, data_user=data_user)
-    now = datetime.now(timezone.utc)
-    jwt_payload = {
-        "sub": user.email,
-        "email": user.email,
-        "name": user.name,
-        "logged_in_at": now.isoformat(),
-    }
-    token_user = encode_jwt(
-        payload=jwt_payload,
-        private_key=setting.auth_jwt.private_key_path.read_text(),
-        algorithm=setting.auth_jwt.algorithm,
-        expire_minutes=setting.auth_jwt.access_token_expire_minutes,
-    )
+    access_token = create_access_token(user=user)
+    refresh_token = create_refresh_token(user=user)
     return TokenBase(
-        access_token=token_user,
-        token_type="Bearer",
+        access_token=access_token,
+        refresh_token=refresh_token,
     )
 
 
