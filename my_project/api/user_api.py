@@ -1,7 +1,6 @@
 from typing import Annotated
-from datetime import datetime, timezone
-from fastapi import APIRouter, Depends, status, HTTPException
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from fastapi import APIRouter, Depends, status
+from fastapi.security import OAuth2PasswordRequestForm, HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.crud import create_user, auth_user, get_current_token_payload, get_user_token
@@ -15,7 +14,7 @@ router = APIRouter(prefix="/auth", tags=["Auth"])
 
 
 @router.post(
-    "/register",
+    "/register/",
     response_model=UserRead,
     status_code=status.HTTP_201_CREATED,
 )
@@ -27,7 +26,10 @@ async def register_user(
     return UserRead.model_validate(user)
 
 
-@router.post("/login", response_model=TokenBase)
+@router.post(
+    "/login/",
+    response_model=TokenBase,
+)
 async def login(
     session: Annotated[AsyncSession, Depends(db_helper.session_getter)],
     data_user: OAuth2PasswordRequestForm = Depends(),
@@ -52,20 +54,8 @@ async def login(
     )
 
 
-# @router.get("/me")
-# async def user_me(
-#     payload: str = Depends(get_current_token_payload),
-# ):
-#     # return {
-#     #     "email": payload.get("email"),
-#     #     "name": payload.get("name"),
-#     #     "logged_in_at": payload.get("logged_in_at"),
-#     # }
-#     return {"token": payload}
-
-
-@router.get("/me2")
-async def user_me2(
+@router.get("/me/")
+async def user_me(
     session: Annotated[AsyncSession, Depends(db_helper.session_getter)],
     payload: str = Depends(setting.auth_jwt.oauth2_scheme),
 ):
